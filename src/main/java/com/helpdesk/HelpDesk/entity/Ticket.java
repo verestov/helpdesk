@@ -21,16 +21,18 @@ public class Ticket {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "title", nullable = false)
+    @Column(name = "title", nullable = false, length = 200)
     private String title;
 
-    @Column(name = "description", nullable = false)
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = false, length = 40)
+    @Enumerated(EnumType.STRING)
     private TicketStatus status;
 
-    @Column(name = "priority", nullable = false)
+    @Column(name = "priority", nullable = false, length = 30)
+    @Enumerated(EnumType.STRING)
     private Priority priority;
 
     @ManyToOne(fetch = FetchType.LAZY)
