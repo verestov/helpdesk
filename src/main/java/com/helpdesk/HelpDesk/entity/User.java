@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 
 @Entity
@@ -27,10 +26,11 @@ public class User {
    @Column(name = "password", nullable = false)
    private String password;
 
-   @Column(name = "full_name", nullable = false)
+   @Column(name = "full_name", nullable = false, length = 150)
    private String fullName;
 
-   @Column(name = "role", nullable = false)
+   @Column(name = "role", nullable = false, length = 30)
+   @Enumerated(EnumType.STRING)
    private Roles role;
 
    @OneToMany(mappedBy = "createdBy")

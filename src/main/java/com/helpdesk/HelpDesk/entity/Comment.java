@@ -26,7 +26,7 @@ public class Comment {
    @JoinColumn(name = "author_id", nullable = false)
    private User author;
 
-   @Column(name = "content", nullable = false)
+   @Column(name = "content", nullable = false, columnDefinition = "TEXT")
    private String content;
 
    @Column(name = "created_at", nullable = false)

@@ -27,7 +27,7 @@ public class TicketHistory {
    @JoinColumn(name = "actor_id", nullable = false)
    private User actor;
 
-   @Column(name = "field_name", nullable = false)
+   @Column(name = "field_name", nullable = false, length = 50)
    private String fieldName;
 
    @Column(name = "old_value")

@@ -2,13 +2,13 @@ include .env
 export
 
 env-up:
-	docker compose up -d helpdesk-postgres
+	@docker compose up -d helpdesk-postgres
 
 env-down:
-	docker compose down helpdesk-postgres
+	@docker compose stop helpdesk-postgres
 
 app-run:
-	./mvnw spring-boot:run
+	@./mvnw spring-boot:run
 
 env-cleanup:
 	@printf "Очистить все volume-файлы окружения? Данные будут удалены. [y/N]: "; \
