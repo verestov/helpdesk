@@ -1,4 +1,9 @@
 package com.helpdesk.HelpDesk.dto.comment;
 
-public record CreateCommentRequest() {
+import jakarta.validation.constraints.NotBlank;
+
+public record CreateCommentRequest(
+        @NotBlank
+        String content
+) {
 }

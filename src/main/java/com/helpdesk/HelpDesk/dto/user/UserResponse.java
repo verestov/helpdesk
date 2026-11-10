@@ -1,4 +1,4 @@
-package com.helpdesk.HelpDesk.dto;
+package com.helpdesk.HelpDesk.dto.user;
 
 import com.helpdesk.HelpDesk.enums.Roles;
 

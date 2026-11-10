@@ -1,4 +1,9 @@
 package com.helpdesk.HelpDesk.dto.ticket;
 
-public record UpdateTicketAssigneeRequest() {
+import jakarta.validation.constraints.Positive;
+
+public record UpdateTicketAssigneeRequest(
+        @Positive
+        Long assigneeId
+) {
 }

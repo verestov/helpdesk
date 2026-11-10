@@ -1,4 +1,4 @@
-package com.helpdesk.HelpDesk.dto;
+package com.helpdesk.HelpDesk.dto.category;
 
 public record CategoryResponse(
         Long id,
