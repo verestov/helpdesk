@@ -56,6 +56,9 @@ public class Ticket {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "is_archived", nullable = false)
+    private boolean isArchived = false;
+
     @OneToMany(mappedBy = "ticket")
     private List<Comment> comments;
 }

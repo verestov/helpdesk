@@ -33,6 +33,9 @@ public class User {
    @Enumerated(EnumType.STRING)
    private Roles role;
 
+   @Column(name = "is_enabled", nullable = false)
+   private boolean isEnabled = true;
+
    @OneToMany(mappedBy = "createdBy")
    private List<Ticket> createdTickets;
 
