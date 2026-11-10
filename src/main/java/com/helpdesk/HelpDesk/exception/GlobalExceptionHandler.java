@@ -14,13 +14,13 @@ import java.time.LocalDateTime;
 public class GlobalExceptionHandler {
     private static  final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleEmailAlreadyExistsException(
-            EmailAlreadyExistsException e
+    @ExceptionHandler(ResourceAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleResourceAlreadyExistsException(
+            ResourceAlreadyExistsException e
     ) {
-        LOGGER.error("Registration failed: email already exists", e);
+        LOGGER.error(e.getMessage());
         var errorDto = new ErrorResponse(
-                "EmailAlreadyExistsException",
+                "ResourceAlreadyExistsException",
                 e.getMessage(),
                 LocalDateTime.now()
         );
@@ -30,18 +30,19 @@ public class GlobalExceptionHandler {
                 .body(errorDto);
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFoundException(
-            UserNotFoundException e
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(
+            ResourceNotFoundException e
     ) {
-        LOGGER.error("Failed to find user: user not found by ID");
+        LOGGER.error(e.getMessage());
+
         var errorDto = new ErrorResponse(
-                "UserNotFoundException",
+                "ResourceNotFoundException",
                 e.getMessage(),
                 LocalDateTime.now()
         );
 
-        return  ResponseEntity
+        return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(errorDto);
     }

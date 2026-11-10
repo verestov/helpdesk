@@ -9,8 +9,10 @@ import com.helpdesk.HelpDesk.enums.Roles;
 import com.helpdesk.HelpDesk.exception.BadUpdateRequestException;
 import com.helpdesk.HelpDesk.exception.EmailAlreadyExistsException;
 import com.helpdesk.HelpDesk.exception.UserNotFoundException;
+import com.helpdesk.HelpDesk.mapper.UserMapper;
 import com.helpdesk.HelpDesk.repository.UserRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,18 +24,21 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
     @Autowired
     public UserService(
             UserRepository userRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            UserMapper userMapper
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userMapper = userMapper;
     }
 
     @Transactional
-    public UserResponse createUser(RegisterRequest registerRequest) {
+    public UserResponse createUser(@NonNull RegisterRequest registerRequest) {
         if(userRepository.existsByEmail(registerRequest.email())) {
             throw new EmailAlreadyExistsException("Email already exists");
         }
@@ -47,21 +52,21 @@ public class UserService {
 
         var savedUser = userRepository.save(newUser);
 
-        return mapToUserResponse(savedUser);
+        return userMapper.toDTO(savedUser);
     }
 
     public UserResponse getUserById(Long id) {
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        return mapToUserResponse(user);
+        return userMapper.toDTO(user);
     }
 
     public List<UserResponse> getAllUsers() {
         List<User> users = userRepository.findAll();
 
         return users.stream()
-                .map(this::mapToUserResponse)
+                .map(userMapper::toDTO)
                 .toList();
     }
 
@@ -76,7 +81,7 @@ public class UserService {
 
         user.setRole(request.role());
         var savedUser = userRepository.save(user);
-        return mapToUserResponse(savedUser);
+        return userMapper.toDTO(savedUser);
     }
 
     @Transactional
@@ -93,15 +98,6 @@ public class UserService {
 
         user.setEnabled(request.isEnabled());
         var savedUser = userRepository.save(user);
-        return mapToUserResponse(savedUser);
-    }
-
-    private UserResponse mapToUserResponse(User user) {
-        return new UserResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getFullName(),
-                user.getRole()
-        );
+        return userMapper.toDTO(savedUser);
     }
 }
