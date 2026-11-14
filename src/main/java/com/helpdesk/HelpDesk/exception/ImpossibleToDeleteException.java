@@ -1,7 +1,7 @@
 package com.helpdesk.HelpDesk.exception;
 
-public class ImposibleToDeleteException extends RuntimeException {
-    public ImposibleToDeleteException(String message) {
+public class ImpossibleToDeleteException extends RuntimeException {
+    public ImpossibleToDeleteException(String message) {
         super(message);
     }
 }

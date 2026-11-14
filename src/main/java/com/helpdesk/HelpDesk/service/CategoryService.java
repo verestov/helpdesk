@@ -2,9 +2,11 @@ package com.helpdesk.HelpDesk.service;
 
 import com.helpdesk.HelpDesk.dto.category.CategoryResponse;
 import com.helpdesk.HelpDesk.dto.category.CreateCategoryRequest;
+import com.helpdesk.HelpDesk.dto.category.UpdateCategoryRequest;
 import com.helpdesk.HelpDesk.entity.Category;
 import com.helpdesk.HelpDesk.exception.CategoryAlreadyExistsException;
 import com.helpdesk.HelpDesk.exception.CategoryNotFoundException;
+import com.helpdesk.HelpDesk.exception.ImpossibleToDeleteException;
 import com.helpdesk.HelpDesk.mapper.CategoryMapper;
 import com.helpdesk.HelpDesk.repository.CategoryRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class CategoryService {
@@ -31,11 +34,12 @@ public class CategoryService {
 
     @Transactional
     public CategoryResponse createCategory(@NonNull CreateCategoryRequest request){
-        if(categoryRepository.existsByName(request.name())){
+        var creatingCategory = request.name().trim().replaceAll("\\s+", " ");
+        if(categoryRepository.existsByName(creatingCategory)){
             throw new CategoryAlreadyExistsException("Category already exists");
         }
         var newCategory = new Category();
-        newCategory.setName(request.name());
+        newCategory.setName(creatingCategory); 
         newCategory.setDescription(request.description());
         newCategory.setCreatedAt(LocalDateTime.now());
 
@@ -57,5 +61,39 @@ public class CategoryService {
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found"));
 
         return categoryMapper.toDTO(category);
+    }
+
+    @Transactional
+    public CategoryResponse updateCategoryById(Long id, UpdateCategoryRequest request){
+        var category = categoryRepository.findById(id)
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found"));
+
+        var updatedCategory = request.name().trim().replaceAll("\\s+", " ");
+        String categoryName = categoryRepository.getNameById(id);
+
+        // Если false => обновляется имя и нужно проверить есть ли категории с таким именем
+        if (!Objects.equals(categoryName, updatedCategory)){
+            if(categoryRepository.existsByName(updatedCategory)){
+                throw new CategoryAlreadyExistsException("Category already exists");
+            }
+        }
+
+        category.setName(updatedCategory);
+        category.setDescription(request.description());
+
+        var categoryToSave = categoryRepository.save(category);
+
+        return categoryMapper.toDTO(categoryToSave);
+    }
+
+    @Transactional
+    public void deleteCategoryById(Long id) {
+        if(!categoryRepository.existsById(id)){
+            throw new CategoryNotFoundException("Category not found");
+        }
+        if(categoryRepository.hasTickets(id)){
+            throw new ImpossibleToDeleteException("Category has tickets");
+        }
+        categoryRepository.deleteById(id);
     }
 }

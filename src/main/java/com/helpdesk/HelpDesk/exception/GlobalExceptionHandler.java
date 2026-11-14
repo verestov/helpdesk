@@ -46,4 +46,21 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.NOT_FOUND)
                 .body(errorDto);
     }
+
+    @ExceptionHandler(ImpossibleToDeleteException.class)
+    public ResponseEntity<ErrorResponse> handleImpossibleToDeleteException(
+            ImpossibleToDeleteException e
+    ) {
+        LOGGER.error("Impossible to delete: category has tickets");
+
+        var errorDto = new ErrorResponse(
+                "ImpossibleToDeleteException",
+                e.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorDto);
+    }
 }

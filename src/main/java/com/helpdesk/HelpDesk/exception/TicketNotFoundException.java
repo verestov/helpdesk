@@ -1,7 +1,7 @@
 package com.helpdesk.HelpDesk.exception;
 
-public class TicketNotFoundException extends RuntimeException {
-  public TicketNotFoundException(String message) {
-    super(message);
-  }
+public class TicketNotFoundException extends ResourceNotFoundException{
+    public TicketNotFoundException(String message) {
+        super(message);
+    }
 }
