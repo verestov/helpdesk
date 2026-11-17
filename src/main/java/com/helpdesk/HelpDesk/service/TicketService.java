@@ -5,19 +5,18 @@ import com.helpdesk.HelpDesk.dto.ticket.TicketResponse;
 import com.helpdesk.HelpDesk.dto.ticket.UpdateTicketPriorityRequest;
 import com.helpdesk.HelpDesk.dto.ticket.UpdateTicketStatusRequest;
 import com.helpdesk.HelpDesk.entity.Ticket;
-import com.helpdesk.HelpDesk.enums.Priority;
+import com.helpdesk.HelpDesk.entity.TicketHistory;
 import com.helpdesk.HelpDesk.enums.TicketStatus;
-import com.helpdesk.HelpDesk.exception.CategoryNotFoundException;
-import com.helpdesk.HelpDesk.exception.PriorityNotFoundException;
-import com.helpdesk.HelpDesk.exception.StatusNotFoundException;
-import com.helpdesk.HelpDesk.exception.TicketNotFoundException;
+import com.helpdesk.HelpDesk.exception.*;
 import com.helpdesk.HelpDesk.mapper.TicketMapper;
 import com.helpdesk.HelpDesk.repository.CategoryRepository;
+import com.helpdesk.HelpDesk.repository.TicketHistoryRepository;
 import com.helpdesk.HelpDesk.repository.TicketRepository;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -25,15 +24,18 @@ public class TicketService {
     private final TicketRepository ticketRepository;
     private final TicketMapper ticketMapper;
     private final CategoryRepository categoryRepository;
+    private final TicketHistoryRepository ticketHistoryRepository;
 
     public TicketService(
             TicketRepository ticketRepository,
             TicketMapper ticketMapper,
-            CategoryRepository categoryRepository
+            CategoryRepository categoryRepository,
+            TicketHistoryRepository ticketHistoryRepository
     ) {
         this.ticketRepository = ticketRepository;
         this.ticketMapper = ticketMapper;
         this.categoryRepository = categoryRepository;
+        this.ticketHistoryRepository = ticketHistoryRepository;
     }
 
     @Transactional
@@ -44,10 +46,14 @@ public class TicketService {
         var newTicket = new Ticket();
         newTicket.setTitle(request.title());
         newTicket.setDescription(request.description());
+        newTicket.setStatus(TicketStatus.OPEN);
         newTicket.setPriority(request.priority());
+        // FIXME: id <- Spring Security
+        newTicket.setAssignedTo(null);
         newTicket.setCategory(category);
-
-        // FIXME: Допилить переменные, которые я не утсановил
+        newTicket.setCreatedAt(LocalDateTime.now());
+        newTicket.setUpdatedAt(LocalDateTime.now());
+        newTicket.setArchived(false);
 
         var ticketToSave = ticketRepository.save(newTicket);
 
@@ -55,8 +61,7 @@ public class TicketService {
     }
 
     public List<TicketResponse> getAllTickets() {
-        // FIXME: Здесь будет проблема N+1
-        List<Ticket> tickets = ticketRepository.findAll();
+        List<Ticket> tickets = ticketRepository.findAllByIsArchivedFalse();
 
         return tickets.stream()
                 .map(ticketMapper::toDTO)
@@ -64,7 +69,7 @@ public class TicketService {
     }
 
     @Transactional(readOnly = true)
-    public TicketResponse getTicketById(@NonNull Long id) {
+    public TicketResponse getTicketById(Long id) {
         var ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException("Ticket not found"));
 
@@ -81,20 +86,76 @@ public class TicketService {
     }
 
     @Transactional
-    public TicketResponse updateTicketStatus(@NonNull Long id, UpdateTicketStatusRequest request) {
+    public TicketResponse updateTicketStatus(
+            Long id,
+            @NonNull UpdateTicketStatusRequest request
+    ) {
         var ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException("Ticket not found"));
 
-        // FIXME: Слишком свободная реализация обновления. Если тикет в статусе CLOSED, его обновлять нельзя
-        ticket.setStatus(request.status());
+        boolean isValidStatusUpdating = isValidStatusTransition(
+                ticket.getStatus(),
+                request.status()
+        );
 
-        var savedTicket = ticketRepository.save(ticket);
+        if(isValidStatusUpdating){
+            saveTicketHistory(
+                    ticket,
+                    ticket.getStatus().name(),
+                    request.status().name(),
+                    request
+            );
 
-        return  ticketMapper.toDTO(savedTicket);
+            ticket.setStatus(request.status());
+            ticket.setUpdatedAt(LocalDateTime.now());
+            var savedTicket = ticketRepository.save(ticket);
+
+            return  ticketMapper.toDTO(savedTicket);
+        } else {
+            throw new ImpossibleToChangeStatusException("Invalid status transition");
+        }
+    }
+
+    private void saveTicketHistory(
+            Ticket ticket,
+            String oldValue,
+            String newValue,
+            @NonNull UpdateTicketStatusRequest request
+
+    ){
+        var newTicketHistory = new TicketHistory();
+        newTicketHistory.setTicket(ticket);
+
+        // FIXME: actor <- Spring Security
+
+        newTicketHistory.setFieldName("status");
+        newTicketHistory.setOldValue(oldValue);
+        newTicketHistory.setNewValue(newValue);
+        newTicketHistory.setCreatedAt(LocalDateTime.now());
+
+        ticketHistoryRepository.save(newTicketHistory);
+    }
+
+    private boolean isValidStatusTransition(
+            @NonNull TicketStatus currentStatus,
+            TicketStatus newStatus
+    ) {
+        return switch (currentStatus) {
+            case OPEN -> newStatus == TicketStatus.IN_PROGRESS;
+            case IN_PROGRESS -> newStatus == TicketStatus.WAITING_FOR_CUSTOMER
+                    || newStatus == TicketStatus.RESOLVED;
+            case WAITING_FOR_CUSTOMER -> newStatus == TicketStatus.IN_PROGRESS
+                    || newStatus == TicketStatus.RESOLVED;
+            case RESOLVED -> newStatus == TicketStatus.CLOSED;
+            case CLOSED -> false;
+        };
     }
 
     @Transactional
-    public TicketResponse updateTicketPriority(@NonNull Long id, UpdateTicketPriorityRequest request) {
+    public TicketResponse updateTicketPriority(
+            Long id,
+            @NonNull UpdateTicketPriorityRequest request
+    ) {
         var ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException("Ticket not found"));
 

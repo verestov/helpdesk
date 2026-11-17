@@ -63,4 +63,21 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(errorDto);
     }
+
+    @ExceptionHandler(ImpossibleToChangeStatusException.class)
+    public ResponseEntity<ErrorResponse> handleImpossibleToChangeStatusException(
+           ImpossibleToChangeStatusException e
+    ) {
+        LOGGER.error("Impossible to change status: category has tickets");
+
+        var errorDto = new ErrorResponse(
+                "ImpossibleToChangeStatusException",
+                e.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorDto);
+    }
 }
