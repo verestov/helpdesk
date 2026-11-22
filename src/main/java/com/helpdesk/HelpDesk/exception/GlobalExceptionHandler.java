@@ -80,4 +80,21 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(errorDto);
     }
+
+    @ExceptionHandler(ImpossibleToArchiveTicketException.class)
+    public ResponseEntity<ErrorResponse> handleImpossibleToArchiveTicketException(
+            ImpossibleToArchiveTicketException e
+    ) {
+        LOGGER.error("Impossible to archive ticket");
+
+        var errorDto = new ErrorResponse(
+                "ImpossibleToArchiveTicketException",
+                e.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorDto);
+    }
 }

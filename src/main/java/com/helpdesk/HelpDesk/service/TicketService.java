@@ -1,9 +1,6 @@
 package com.helpdesk.HelpDesk.service;
 
-import com.helpdesk.HelpDesk.dto.ticket.CreateTicketRequest;
-import com.helpdesk.HelpDesk.dto.ticket.TicketResponse;
-import com.helpdesk.HelpDesk.dto.ticket.UpdateTicketPriorityRequest;
-import com.helpdesk.HelpDesk.dto.ticket.UpdateTicketStatusRequest;
+import com.helpdesk.HelpDesk.dto.ticket.*;
 import com.helpdesk.HelpDesk.entity.Ticket;
 import com.helpdesk.HelpDesk.entity.TicketHistory;
 import com.helpdesk.HelpDesk.enums.TicketStatus;
@@ -101,34 +98,63 @@ public class TicketService {
         if(isValidStatusUpdating){
             saveTicketHistory(
                     ticket,
+                    "status",
                     ticket.getStatus().name(),
-                    request.status().name(),
-                    request
+                    request.status().name()
             );
 
             ticket.setStatus(request.status());
             ticket.setUpdatedAt(LocalDateTime.now());
             var savedTicket = ticketRepository.save(ticket);
 
-            return  ticketMapper.toDTO(savedTicket);
+            return ticketMapper.toDTO(savedTicket);
         } else {
             throw new ImpossibleToChangeStatusException("Invalid status transition");
         }
     }
 
+    @Transactional
+    public TicketResponse archiveTicket(ArchiveTicketRequest request) {
+        var ticket = ticketRepository.findById(request.id())
+                .orElseThrow(() -> new TicketNotFoundException("ticket not found"));
+        if(ticket.isArchived()){
+            throw new ImpossibleToArchiveTicketException("Ticket is already archived");
+        }
+
+        if(!ticket.getStatus().equals(TicketStatus.RESOLVED) && !ticket.getStatus().equals(TicketStatus.CLOSED)){
+            throw new ImpossibleToArchiveTicketException("Ticket not finished");
+        }
+
+        var createdDatePlusMonth = ticket.getCreatedAt().plusMonths(1);
+        if(LocalDateTime.now().isBefore(createdDatePlusMonth)){
+            throw new ImpossibleToArchiveTicketException("Ticket can not be archived");
+        }
+
+        saveTicketHistory(
+                ticket,
+                "archived",
+                String.valueOf(ticket.isArchived()),
+                "true"
+        );
+        ticket.setArchived(true);
+        ticket.setUpdatedAt(LocalDateTime.now());
+        ticketRepository.save(ticket);
+
+        return ticketMapper.toDTO(ticket);
+    }
+
     private void saveTicketHistory(
             Ticket ticket,
+            String fieldName,
             String oldValue,
-            String newValue,
-            @NonNull UpdateTicketStatusRequest request
-
+            String newValue
     ){
         var newTicketHistory = new TicketHistory();
         newTicketHistory.setTicket(ticket);
 
         // FIXME: actor <- Spring Security
 
-        newTicketHistory.setFieldName("status");
+        newTicketHistory.setFieldName(fieldName);
         newTicketHistory.setOldValue(oldValue);
         newTicketHistory.setNewValue(newValue);
         newTicketHistory.setCreatedAt(LocalDateTime.now());
