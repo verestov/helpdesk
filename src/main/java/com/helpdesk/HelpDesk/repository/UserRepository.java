@@ -15,4 +15,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = :role AND u.isEnabled = true")
     long countActiveAdmins(@Param("role") Roles role);
+
+    Optional<User> findByEmail(String email);
 }
