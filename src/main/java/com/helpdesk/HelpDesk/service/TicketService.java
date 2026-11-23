@@ -69,7 +69,6 @@ public class TicketService {
     public TicketResponse getTicketById(Long id) {
         var ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException("Ticket not found"));
-
         return ticketMapper.toDTO(ticket);
     }
 
@@ -95,22 +94,22 @@ public class TicketService {
                 request.status()
         );
 
-        if(isValidStatusUpdating){
-            saveTicketHistory(
-                    ticket,
-                    "status",
-                    ticket.getStatus().name(),
-                    request.status().name()
-            );
-
-            ticket.setStatus(request.status());
-            ticket.setUpdatedAt(LocalDateTime.now());
-            var savedTicket = ticketRepository.save(ticket);
-
-            return ticketMapper.toDTO(savedTicket);
-        } else {
+        if(!isValidStatusUpdating){
             throw new ImpossibleToChangeStatusException("Invalid status transition");
         }
+
+        saveTicketHistory(
+                ticket,
+                "status",
+                ticket.getStatus().name(),
+                request.status().name()
+        );
+
+        ticket.setStatus(request.status());
+        ticket.setUpdatedAt(LocalDateTime.now());
+        var savedTicket = ticketRepository.save(ticket);
+
+        return ticketMapper.toDTO(savedTicket);
     }
 
     @Transactional
