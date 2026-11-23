@@ -25,10 +25,10 @@ public class TicketMapper implements GenericMapper<Ticket, TicketResponse> {
                 ticket.getStatus(),
                 ticket.getPriority(),
                 userMapper.toDTO(ticket.getCreatedBy()),
-                userMapper.toDTO(ticket.getAssignedTo()),
                 ticket.getAssignedTo() == null
                         ? null
-                        : categoryMapper.toDTO(ticket.getCategory()),
+                        : userMapper.toDTO(ticket.getAssignedTo()),
+                categoryMapper.toDTO(ticket.getCategory()),
                 ticket.getCreatedAt(),
                 ticket.getUpdatedAt(),
                 ticket.isArchived()
