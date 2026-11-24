@@ -5,8 +5,8 @@ import com.helpdesk.HelpDesk.dto.user.UpdateUserStatusRequest;
 import com.helpdesk.HelpDesk.dto.user.UserResponse;
 import com.helpdesk.HelpDesk.entity.User;
 import com.helpdesk.HelpDesk.enums.Roles;
-import com.helpdesk.HelpDesk.exception.BadUpdateRequestException;
-import com.helpdesk.HelpDesk.exception.UserNotFoundException;
+import com.helpdesk.HelpDesk.exception.BusinessRuleViolationException;
+import com.helpdesk.HelpDesk.exception.ResourceNotFoundException;
 import com.helpdesk.HelpDesk.mapper.UserMapper;
 import com.helpdesk.HelpDesk.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +31,7 @@ public class UserService {
 
     public UserResponse getUserById(Long id) {
         var user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return userMapper.toDTO(user);
     }
@@ -47,10 +47,10 @@ public class UserService {
     @Transactional
     public UserResponse updateUserRole(Long id, UpdateUserRoleRequest request) {
         var user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if(user.getRole() == Roles.ADMIN) {
-            throw new BadUpdateRequestException("Role ADMIN can not be changed");
+            throw new BusinessRuleViolationException("Role ADMIN can not be changed");
         }
 
         user.setRole(request.role());
@@ -61,11 +61,11 @@ public class UserService {
     @Transactional
     public UserResponse updateUserStatus(Long id, UpdateUserStatusRequest request) {
         var user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         var countOfAdmins = userRepository.countActiveAdmins(Roles.ADMIN);
 
         if (countOfAdmins == 2 && user.getRole() == Roles.ADMIN && !request.isEnabled()) {
-            throw new BadUpdateRequestException("Last ADMIN can not be disabled");
+            throw new BusinessRuleViolationException("Last ADMIN can not be disabled");
         }
 
         // TODO: Реализовать проверку на попытку заблокировать самого себя

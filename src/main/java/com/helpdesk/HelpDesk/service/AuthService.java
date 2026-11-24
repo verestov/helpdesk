@@ -8,7 +8,7 @@ import com.helpdesk.HelpDesk.dto.register.RegisterRequest;
 import com.helpdesk.HelpDesk.dto.user.UserResponse;
 import com.helpdesk.HelpDesk.entity.User;
 import com.helpdesk.HelpDesk.enums.Roles;
-import com.helpdesk.HelpDesk.exception.EmailAlreadyExistsException;
+import com.helpdesk.HelpDesk.exception.ResourceAlreadyExistsException;
 import com.helpdesk.HelpDesk.mapper.UserMapper;
 import com.helpdesk.HelpDesk.repository.UserRepository;
 import org.jspecify.annotations.NonNull;
@@ -49,7 +49,7 @@ public class AuthService {
             @NonNull RegisterRequest registerRequest
     ) {
         if (userRepository.existsByEmail(registerRequest.email())) {
-            throw new EmailAlreadyExistsException("Email already exists");
+            throw new ResourceAlreadyExistsException("Email already exists");
         }
         var newUser = new User();
         newUser.setFullName(registerRequest.fullName());
@@ -77,6 +77,7 @@ public class AuthService {
         String token = jwtCore.generateToken(authentication);
 
         var principal = (UserDetailsImpl) authentication.getPrincipal();
+        assert principal != null;
         var user = userRepository.findById(principal.getId())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 

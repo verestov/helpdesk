@@ -4,9 +4,9 @@ import com.helpdesk.HelpDesk.dto.category.CategoryResponse;
 import com.helpdesk.HelpDesk.dto.category.CreateCategoryRequest;
 import com.helpdesk.HelpDesk.dto.category.UpdateCategoryRequest;
 import com.helpdesk.HelpDesk.entity.Category;
-import com.helpdesk.HelpDesk.exception.CategoryAlreadyExistsException;
-import com.helpdesk.HelpDesk.exception.CategoryNotFoundException;
-import com.helpdesk.HelpDesk.exception.ImpossibleToDeleteException;
+import com.helpdesk.HelpDesk.exception.BusinessRuleViolationException;
+import com.helpdesk.HelpDesk.exception.ResourceAlreadyExistsException;
+import com.helpdesk.HelpDesk.exception.ResourceNotFoundException;
 import com.helpdesk.HelpDesk.mapper.CategoryMapper;
 import com.helpdesk.HelpDesk.repository.CategoryRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +36,7 @@ public class CategoryService {
     public CategoryResponse createCategory(@NonNull CreateCategoryRequest request){
         var creatingCategory = request.name().trim().replaceAll("\\s+", " ");
         if(categoryRepository.existsByName(creatingCategory)){
-            throw new CategoryAlreadyExistsException("Category already exists");
+            throw new ResourceAlreadyExistsException("Category already exists");
         }
         var newCategory = new Category();
         newCategory.setName(creatingCategory); 
@@ -58,7 +58,7 @@ public class CategoryService {
 
     public CategoryResponse getCategoryById(Long id) {
         var category = categoryRepository.findById(id)
-                .orElseThrow(() -> new CategoryNotFoundException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         return categoryMapper.toDTO(category);
     }
@@ -66,7 +66,7 @@ public class CategoryService {
     @Transactional
     public CategoryResponse updateCategoryById(Long id, UpdateCategoryRequest request){
         var category = categoryRepository.findById(id)
-                .orElseThrow(() -> new CategoryNotFoundException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         var updatedCategory = request.name().trim().replaceAll("\\s+", " ");
         String categoryName = categoryRepository.getNameById(id);
@@ -74,7 +74,7 @@ public class CategoryService {
         // Если false => обновляется имя и нужно проверить есть ли категории с таким именем
         if (!Objects.equals(categoryName, updatedCategory)){
             if(categoryRepository.existsByName(updatedCategory)){
-                throw new CategoryAlreadyExistsException("Category already exists");
+                throw new ResourceAlreadyExistsException("Category already exists");
             }
         }
 
@@ -89,10 +89,10 @@ public class CategoryService {
     @Transactional
     public void deleteCategoryById(Long id) {
         if(!categoryRepository.existsById(id)){
-            throw new CategoryNotFoundException("Category not found");
+            throw new ResourceNotFoundException("Category not found");
         }
         if(categoryRepository.hasTickets(id)){
-            throw new ImpossibleToDeleteException("Category has tickets");
+            throw new BusinessRuleViolationException("Category has tickets");
         }
         categoryRepository.deleteById(id);
     }

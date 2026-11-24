@@ -33,7 +33,7 @@ public class TicketHistory {
    @Column(name = "old_value")
    private String oldValue;
 
-   @Column(name = "new_value", nullable = false)
+   @Column(name = "new_value")
    private String newValue;
 
    @Column(name = "created_at", nullable = false)
