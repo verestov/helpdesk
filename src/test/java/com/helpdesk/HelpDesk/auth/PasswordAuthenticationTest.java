@@ -7,9 +7,8 @@ import com.helpdesk.HelpDesk.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,14 +23,9 @@ class PasswordAuthenticationTest {
     private static final String PASSWORD = "test-password";
 
     private final UserRepository users = mock(UserRepository.class);
-    private final PasswordEncoder encoder = new SecurityConfig().passwordEncoder();
-    private final ProviderManager manager;
-
-    PasswordAuthenticationTest() {
-        var provider = new DaoAuthenticationProvider(new UserDetailsServiceImpl(users));
-        provider.setPasswordEncoder(encoder);
-        manager = new ProviderManager(provider);
-    }
+    private final SecurityConfig config = new SecurityConfig();
+    private final PasswordEncoder encoder = config.passwordEncoder();
+    private final AuthenticationManager manager = config.authenticationManager(new UserDetailsServiceImpl(users), encoder);
 
     @Test
     void authenticatesActiveUserWithEmailAndSupportRole() {
